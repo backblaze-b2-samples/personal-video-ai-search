@@ -1,0 +1,25 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+python-multipart>=0.0.18
+python-dotenv>=1.0.0
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+boto3>=1.35.0
+
+# Multimodal index pipeline
+numpy>=1.26.0
+openai>=1.40.0
+anthropic>=0.39.0
+
+# Local face detect / embed / cluster ($0 API cost; first run downloads the
+# model weights). insightface ships ONNX face-recognition models; onnxruntime
+# runs them on CPU. scikit-learn provides the clustering.
+insightface>=0.7.3
+onnxruntime>=1.18.0
+scikit-learn>=1.4.0
+
+# Dev / quality
+ruff>=0.8.0
+pytest>=8.0.0
+pytest-asyncio>=0.24.0
+httpx>=0.27.0
