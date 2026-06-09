@@ -22,6 +22,9 @@ env/
 .env.local
 .env.*.local
 
+# Local verification assets
+.local/
+
 # IDE
 .vscode/
 .idea/

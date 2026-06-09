@@ -12,6 +12,7 @@ import {
   getPersonClips,
   getPreviewUrl,
   getUploadActivity,
+  getVideoPlayback,
   getVideos,
   ingestVideo,
   namePerson,
@@ -33,6 +34,7 @@ export const qk = {
   preview: (key: string) => [...qk.all, "preview", key] as const,
   videos: () => [...qk.all, "videos"] as const,
   video: (id: string) => [...qk.all, "videos", id] as const,
+  videoPlayback: (id: string) => [...qk.all, "videos", id, "playback"] as const,
   people: () => [...qk.all, "people"] as const,
   facesAvailable: () => [...qk.all, "people", "available"] as const,
   personClips: (id: string) => [...qk.all, "people", id, "clips"] as const,
@@ -118,6 +120,20 @@ export function useDeleteVideo() {
   return useMutation({
     mutationFn: (videoId: string) => deleteVideo(videoId),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.all }),
+  });
+}
+
+// Presigned playback URL for a video's original source in B2 — fetched only
+// while the player dialog is open (`enabled`). Kept short-lived (60s) because
+// the URL carries its own presigned expiry and is cheap to regenerate. The
+// <video> element streams it over Range requests, so seeking pulls only the
+// bytes it needs rather than downloading the whole (multi-GB) source.
+export function useVideoPlayback(videoId: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.videoPlayback(videoId ?? ""),
+    queryFn: () => getVideoPlayback(videoId as string),
+    enabled: enabled && !!videoId,
+    staleTime: 60_000,
   });
 }
 

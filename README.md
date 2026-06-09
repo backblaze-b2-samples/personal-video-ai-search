@@ -70,7 +70,8 @@ in the bucket — no vector DB, no Postgres.
   person/date filters → ranked, playable clips; optional Claude-synthesized
   answer.
 - **[Video Library](docs/features/video-library.md)** — sample-scoped asset
-  explorer with per-video pipeline status + re-index / delete.
+  explorer with per-video pipeline status; watch any video inline (streamed
+  from B2 over a presigned Range read) + re-index / delete.
 - **[File Browser](docs/features/file-browser.md)** — the starter kit's
   full-bucket explorer, kept as-is.
 - **[Design System](docs/design-system.md)** — tokens, primitives, the blaze
