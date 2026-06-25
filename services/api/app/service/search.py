@@ -33,6 +33,13 @@ def _as_utc(value: datetime) -> datetime:
     return value.astimezone(UTC)
 
 
+def _end_of_millisecond(value: datetime) -> datetime:
+    remainder = value.microsecond % 1000
+    if remainder == 999:
+        return value
+    return value.replace(microsecond=value.microsecond + (999 - remainder))
+
+
 def _matches_video_filters(
     video: Video,
     created_at_from: datetime | None,
@@ -59,7 +66,11 @@ def search(req: SearchRequest) -> SearchResponse:
         )
 
     created_at_from = _as_utc(req.created_at_from) if req.created_at_from else None
-    created_at_to = _as_utc(req.created_at_to) if req.created_at_to else None
+    created_at_to = (
+        _end_of_millisecond(_as_utc(req.created_at_to))
+        if req.created_at_to
+        else None
+    )
     event_name = (req.event_name or "").strip().casefold()
 
     videos_by_id = {v.video_id: v for v in videos_svc.list_videos()}

@@ -61,6 +61,11 @@ def search_fixture(monkeypatch):
             datetime(2026, 2, 15, 1, 30, tzinfo=UTC),
         ),
         _video(
+            "final-ms-birthday",
+            "Final Millisecond Birthday",
+            datetime(2026, 2, 15, 4, 59, 59, 999999, tzinfo=UTC),
+        ),
+        _video(
             "vacation",
             "Beach Vacation",
             datetime(2026, 3, 5, 9, 0, tzinfo=UTC),
@@ -71,6 +76,9 @@ def search_fixture(monkeypatch):
         video_store.embeddings_key("birthday"): _index("birthday", "s0001"),
         video_store.embeddings_key("late-birthday"): _index(
             "late-birthday", "s0003"
+        ),
+        video_store.embeddings_key("final-ms-birthday"): _index(
+            "final-ms-birthday", "s0004"
         ),
         video_store.embeddings_key("vacation"): _index("vacation", "s0002"),
     }
@@ -92,7 +100,11 @@ def test_search_filters_by_created_at_range(search_fixture):
         )
     )
 
-    assert [clip.video_id for clip in resp.clips] == ["birthday", "late-birthday"]
+    assert [clip.video_id for clip in resp.clips] == [
+        "birthday",
+        "late-birthday",
+        "final-ms-birthday",
+    ]
 
 
 def test_search_filters_by_event_name(search_fixture):
