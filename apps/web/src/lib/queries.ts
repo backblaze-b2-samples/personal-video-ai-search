@@ -148,8 +148,8 @@ export function useReindexVideo() {
 
 export function useSearch() {
   return useMutation({
-    mutationFn: (vars: SearchOptions & { question: string }) =>
-      searchVideos(vars.question, vars),
+    mutationFn: ({ question, ...opts }: SearchOptions & { question: string }) =>
+      searchVideos(question, opts),
   });
 }
 

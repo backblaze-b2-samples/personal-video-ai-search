@@ -31,6 +31,7 @@ import { usePeople, useSearch } from "@/lib/queries";
 import type { Clip } from "@personal-video-ai-search/shared";
 
 const ANY_PERSON = "__any__";
+const EVENT_NAME_MAX_LENGTH = 128;
 
 export default function SearchPage() {
   const [question, setQuestion] = useState("");
@@ -91,6 +92,7 @@ export default function SearchPage() {
                   id="event-name"
                   value={eventName}
                   onChange={(e) => setEventName(e.target.value)}
+                  maxLength={EVENT_NAME_MAX_LENGTH}
                   placeholder="Birthday"
                   className="h-8 w-40"
                 />
