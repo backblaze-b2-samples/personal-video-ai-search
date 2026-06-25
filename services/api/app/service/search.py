@@ -71,7 +71,7 @@ def search(req: SearchRequest) -> SearchResponse:
         if req.created_at_to
         else None
     )
-    event_name = (req.event_name or "").strip().casefold()
+    event_name = (req.event_name or "").casefold()
 
     videos_by_id = {v.video_id: v for v in videos_svc.list_videos()}
     if req.video_id:

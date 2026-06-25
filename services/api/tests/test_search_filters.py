@@ -137,6 +137,14 @@ def test_search_rejects_oversized_event_name():
         SearchRequest(question="pool", event_name="x" * 129)
 
 
+def test_search_normalizes_event_name_before_length_validation():
+    empty = SearchRequest(question="pool", event_name=" " * 129)
+    padded = SearchRequest(question="pool", event_name=f" {'x' * 128} ")
+
+    assert empty.event_name is None
+    assert padded.event_name == "x" * 128
+
+
 async def test_search_api_rejects_oversized_event_name(client):
     resp = await client.post(
         "/search",

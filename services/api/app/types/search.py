@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class SearchRequest(BaseModel):
@@ -20,6 +20,16 @@ class SearchRequest(BaseModel):
     # When true and an answer model is configured, synthesize a short answer
     # over the retrieved clips with Claude.
     synthesize: bool = False
+
+    @field_validator("event_name", mode="before")
+    @classmethod
+    def normalize_event_name(cls, value: object) -> object:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            return value
+        stripped = value.strip()
+        return stripped or None
 
     @model_validator(mode="after")
     def validate_created_at_range(self) -> "SearchRequest":
