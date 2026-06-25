@@ -21,6 +21,8 @@ interface HealthResponse {
   };
 }
 
+let searchFilterSupportCheck: Promise<void> | null = null;
+
 /** Typed API error with HTTP status code for caller-side branching. */
 export class ApiError extends Error {
   constructor(
@@ -65,6 +67,21 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export async function getHealth() {
   return apiFetch<HealthResponse>("/health");
+}
+
+async function ensureSearchFiltersSupported() {
+  searchFilterSupportCheck ??= getHealth()
+    .then((health) => {
+      if (health.features?.search_filters !== true) {
+        throw new ApiError("Search filter support is not available on the API", 409);
+      }
+    })
+    .catch((error) => {
+      searchFilterSupportCheck = null;
+      throw error;
+    });
+
+  return searchFilterSupportCheck;
 }
 
 export async function getFiles(prefix = "", limit = 100) {
@@ -214,10 +231,7 @@ export async function searchVideos(question: string, opts: SearchOptions = {}) {
   const eventName = opts.eventName?.trim() || null;
 
   if (createdAtFrom || createdAtTo || eventName) {
-    const health = await getHealth();
-    if (health.features?.search_filters !== true) {
-      throw new ApiError("Search filter support is not available on the API", 409);
-    }
+    await ensureSearchFiltersSupported();
   }
 
   return apiFetch<SearchResponse>("/search", {
