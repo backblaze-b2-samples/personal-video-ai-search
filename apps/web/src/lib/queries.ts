@@ -151,12 +151,18 @@ export function useSearch() {
       question: string;
       videoId?: string | null;
       personId?: string | null;
+      createdAtFrom?: string | null;
+      createdAtTo?: string | null;
+      eventName?: string | null;
       topK?: number;
       synthesize?: boolean;
     }) =>
       searchVideos(vars.question, {
         videoId: vars.videoId ?? null,
         personId: vars.personId ?? null,
+        createdAtFrom: vars.createdAtFrom ?? null,
+        createdAtTo: vars.createdAtTo ?? null,
+        eventName: vars.eventName ?? null,
         topK: vars.topK,
         synthesize: vars.synthesize,
       }),

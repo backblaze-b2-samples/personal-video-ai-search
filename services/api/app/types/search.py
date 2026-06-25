@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from datetime import date
+
+from pydantic import BaseModel, model_validator
 
 
 class SearchRequest(BaseModel):
@@ -8,10 +10,26 @@ class SearchRequest(BaseModel):
     # Optional structured filter: only return clips where this person (face
     # cluster) appears.
     person_id: str | None = None
+    # Inclusive date range over the video's created_at timestamp.
+    created_at_from: date | None = None
+    created_at_to: date | None = None
+    # Optional event/file-name filter. Event names are matched against the
+    # ingested video title because B2 remains the sole datastore.
+    event_name: str | None = None
     top_k: int = 8
     # When true and an answer model is configured, synthesize a short answer
     # over the retrieved clips with Claude.
     synthesize: bool = False
+
+    @model_validator(mode="after")
+    def validate_created_at_range(self) -> "SearchRequest":
+        if (
+            self.created_at_from
+            and self.created_at_to
+            and self.created_at_from > self.created_at_to
+        ):
+            raise ValueError("created_at_from must be on or before created_at_to")
+        return self
 
 
 class Clip(BaseModel):

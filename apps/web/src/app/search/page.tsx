@@ -1,12 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { KeyRound, Search as SearchIcon, Sparkles, Telescope } from "lucide-react";
+import {
+  CalendarDays,
+  KeyRound,
+  Search as SearchIcon,
+  Sparkles,
+  Tags,
+  Telescope,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -28,6 +36,9 @@ export default function SearchPage() {
   const [question, setQuestion] = useState("");
   const [synthesize, setSynthesize] = useState(false);
   const [personId, setPersonId] = useState<string>(ANY_PERSON);
+  const [createdAtFrom, setCreatedAtFrom] = useState("");
+  const [createdAtTo, setCreatedAtTo] = useState("");
+  const [eventName, setEventName] = useState("");
   const search = useSearch();
   const { data: people = [] } = usePeople();
   const namedPeople = people.filter((p) => p.name);
@@ -39,6 +50,9 @@ export default function SearchPage() {
       question: q,
       synthesize,
       personId: personId === ANY_PERSON ? null : personId,
+      createdAtFrom: createdAtFrom || null,
+      createdAtTo: createdAtTo || null,
+      eventName: eventName.trim() || null,
     });
   };
 
@@ -68,6 +82,44 @@ export default function SearchPage() {
           />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="event-name" className="text-muted-foreground">
+                  <Tags className="h-3.5 w-3.5" />
+                  Event
+                </Label>
+                <Input
+                  id="event-name"
+                  value={eventName}
+                  onChange={(e) => setEventName(e.target.value)}
+                  placeholder="Birthday"
+                  className="h-8 w-40"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="created-at-from" className="text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  From
+                </Label>
+                <Input
+                  id="created-at-from"
+                  type="date"
+                  value={createdAtFrom}
+                  onChange={(e) => setCreatedAtFrom(e.target.value)}
+                  className="h-8 w-36"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="created-at-to" className="text-muted-foreground">
+                  To
+                </Label>
+                <Input
+                  id="created-at-to"
+                  type="date"
+                  value={createdAtTo}
+                  onChange={(e) => setCreatedAtTo(e.target.value)}
+                  className="h-8 w-36"
+                />
+              </div>
               {namedPeople.length > 0 && (
                 <div className="flex items-center gap-2">
                   <Label className="text-muted-foreground">Person</Label>

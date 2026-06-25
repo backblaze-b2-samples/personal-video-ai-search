@@ -13,7 +13,7 @@ import numpy as np
 from app.repo import embeddings, llm, video_store
 from app.service import people as people_svc
 from app.service import videos as videos_svc
-from app.types import Clip, SceneIndex, SearchRequest, SearchResponse, VideoStatus
+from app.types import Clip, SceneIndex, SearchRequest, SearchResponse, Video, VideoStatus
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,17 @@ def _cosine(query: np.ndarray, vector: list[float]) -> float:
     if denom == 0.0:
         return 0.0
     return float(np.dot(query, vec) / denom)
+
+
+def _matches_video_filters(video: Video, req: SearchRequest) -> bool:
+    created_at = video.created_at.date()
+    if req.created_at_from and created_at < req.created_at_from:
+        return False
+    if req.created_at_to and created_at > req.created_at_to:
+        return False
+
+    event_name = (req.event_name or "").strip().casefold()
+    return not event_name or event_name in video.title.casefold()
 
 
 def search(req: SearchRequest) -> SearchResponse:
@@ -39,10 +50,15 @@ def search(req: SearchRequest) -> SearchResponse:
 
     videos_by_id = {v.video_id: v for v in videos_svc.list_videos()}
     if req.video_id:
-        target_ids = [req.video_id] if req.video_id in videos_by_id else []
+        video = videos_by_id.get(req.video_id)
+        target_ids = (
+            [req.video_id] if video and _matches_video_filters(video, req) else []
+        )
     else:
         target_ids = [
-            vid for vid, v in videos_by_id.items() if v.status == VideoStatus.ready
+            vid
+            for vid, v in videos_by_id.items()
+            if v.status == VideoStatus.ready and _matches_video_filters(v, req)
         ]
 
     indexes: list[SceneIndex] = []

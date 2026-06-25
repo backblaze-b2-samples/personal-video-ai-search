@@ -162,6 +162,9 @@ export async function reindexVideo(videoId: string) {
 export interface SearchOptions {
   videoId?: string | null;
   personId?: string | null;
+  createdAtFrom?: string | null;
+  createdAtTo?: string | null;
+  eventName?: string | null;
   topK?: number;
   synthesize?: boolean;
 }
@@ -174,6 +177,9 @@ export async function searchVideos(question: string, opts: SearchOptions = {}) {
       question,
       video_id: opts.videoId ?? null,
       person_id: opts.personId ?? null,
+      created_at_from: opts.createdAtFrom || null,
+      created_at_to: opts.createdAtTo || null,
+      event_name: opts.eventName?.trim() || null,
       top_k: opts.topK ?? 8,
       synthesize: opts.synthesize ?? false,
     }),
