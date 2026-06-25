@@ -1,4 +1,4 @@
-<!-- last_verified: 2026-06-09 -->
+<!-- last_verified: 2026-06-25 -->
 # Reliability
 
 Reliability expectations and practices for this project.
@@ -55,3 +55,8 @@ Reliability expectations and practices for this project.
 - Railway health checks on `/health`
 - Zero-downtime deploys via rolling updates
 - Environment-specific configuration via env vars (no config files in prod)
+- Search-filter UI rollout is backend-first: deploy and drain old API instances
+  until `/health` reports `features.search_filters: true` everywhere, then
+  enable the frontend that sends `created_at_*` and `event_name`. The frontend
+  checks this flag before sending filtered search requests, and the backend
+  rejects unknown `SearchRequest` fields.

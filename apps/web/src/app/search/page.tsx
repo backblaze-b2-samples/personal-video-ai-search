@@ -28,6 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ClipCard } from "@/components/search/clip-card";
 import { usePeople, useSearch } from "@/lib/queries";
+import type { LocalDateString } from "@/lib/api-client";
 import type { Clip } from "@personal-video-ai-search/shared";
 
 const ANY_PERSON = "__any__";
@@ -37,8 +38,8 @@ export default function SearchPage() {
   const [question, setQuestion] = useState("");
   const [synthesize, setSynthesize] = useState(false);
   const [personId, setPersonId] = useState<string>(ANY_PERSON);
-  const [createdAtFrom, setCreatedAtFrom] = useState("");
-  const [createdAtTo, setCreatedAtTo] = useState("");
+  const [createdAtFrom, setCreatedAtFrom] = useState<LocalDateString | "">("");
+  const [createdAtTo, setCreatedAtTo] = useState<LocalDateString | "">("");
   const [eventName, setEventName] = useState("");
   const search = useSearch();
   const { data: people = [] } = usePeople();
@@ -106,7 +107,9 @@ export default function SearchPage() {
                   id="created-at-from"
                   type="date"
                   value={createdAtFrom}
-                  onChange={(e) => setCreatedAtFrom(e.target.value)}
+                  onChange={(e) =>
+                    setCreatedAtFrom(e.target.value as LocalDateString | "")
+                  }
                   className="h-8 w-36"
                 />
               </div>
@@ -118,7 +121,9 @@ export default function SearchPage() {
                   id="created-at-to"
                   type="date"
                   value={createdAtTo}
-                  onChange={(e) => setCreatedAtTo(e.target.value)}
+                  onChange={(e) =>
+                    setCreatedAtTo(e.target.value as LocalDateString | "")
+                  }
                   className="h-8 w-36"
                 />
               </div>

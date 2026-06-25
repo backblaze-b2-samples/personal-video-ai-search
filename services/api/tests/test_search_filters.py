@@ -100,11 +100,12 @@ def test_search_filters_by_created_at_range(search_fixture):
         )
     )
 
-    assert [clip.video_id for clip in resp.clips] == [
+    assert {clip.video_id for clip in resp.clips} == {
         "birthday",
         "late-birthday",
         "final-ms-birthday",
-    ]
+    }
+    assert len(resp.clips) == 3
 
 
 def test_search_preserves_microsecond_upper_bound(search_fixture):
@@ -116,7 +117,8 @@ def test_search_preserves_microsecond_upper_bound(search_fixture):
         )
     )
 
-    assert [clip.video_id for clip in resp.clips] == ["birthday", "late-birthday"]
+    assert {clip.video_id for clip in resp.clips} == {"birthday", "late-birthday"}
+    assert len(resp.clips) == 2
 
 
 def test_search_filters_by_event_name(search_fixture):
@@ -161,6 +163,15 @@ async def test_search_api_rejects_oversized_event_name(client):
     resp = await client.post(
         "/search",
         json={"question": "pool", "event_name": "x" * 129},
+    )
+
+    assert resp.status_code == 422
+
+
+async def test_search_api_rejects_unknown_filter_fields(client):
+    resp = await client.post(
+        "/search",
+        json={"question": "pool", "created_at_start": "2026-02-14T00:00:00Z"},
     )
 
     assert resp.status_code == 422

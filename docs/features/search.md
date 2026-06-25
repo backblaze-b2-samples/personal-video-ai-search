@@ -23,6 +23,8 @@ The B2 **repeated small-read path**.
 - `SearchRequest`: question, optional video_id, optional person_id, optional
   timezone-aware `created_at_from` / `created_at_to` instant range, optional
   event_name, top_k, synthesize
+- Frontend `SearchOptions` accepts only local `YYYY-MM-DD` date strings and
+  converts them to timezone-aware start/end instants before calling the API
 
 ## Outputs
 - `SearchResponse`: clips (video, scene, timestamp, caption, tags, score,
