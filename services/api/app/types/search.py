@@ -1,6 +1,6 @@
-from datetime import date
+from datetime import datetime
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class SearchRequest(BaseModel):
@@ -10,12 +10,12 @@ class SearchRequest(BaseModel):
     # Optional structured filter: only return clips where this person (face
     # cluster) appears.
     person_id: str | None = None
-    # Inclusive date range over the video's created_at timestamp.
-    created_at_from: date | None = None
-    created_at_to: date | None = None
+    # Inclusive timezone-aware instants over the video's created_at timestamp.
+    created_at_from: datetime | None = None
+    created_at_to: datetime | None = None
     # Optional event/file-name filter. Event names are matched against the
     # ingested video title because B2 remains the sole datastore.
-    event_name: str | None = None
+    event_name: str | None = Field(default=None, max_length=128)
     top_k: int = 8
     # When true and an answer model is configured, synthesize a short answer
     # over the retrieved clips with Claude.
@@ -23,6 +23,9 @@ class SearchRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_created_at_range(self) -> "SearchRequest":
+        for value in (self.created_at_from, self.created_at_to):
+            if value and (value.tzinfo is None or value.utcoffset() is None):
+                raise ValueError("created_at filters must include a timezone")
         if (
             self.created_at_from
             and self.created_at_to

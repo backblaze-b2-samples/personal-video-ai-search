@@ -21,8 +21,8 @@ The B2 **repeated small-read path**.
 
 ## Inputs
 - `SearchRequest`: question, optional video_id, optional person_id, optional
-  `created_at_from` / `created_at_to` date range, optional event_name, top_k,
-  synthesize
+  timezone-aware `created_at_from` / `created_at_to` instant range, optional
+  event_name, top_k, synthesize
 
 ## Outputs
 - `SearchResponse`: clips (video, scene, timestamp, caption, tags, score,
@@ -30,10 +30,12 @@ The B2 **repeated small-read path**.
 
 ## Flow
 - If no embedding provider → return `provider_configured: false` (clear UI state, not a 500)
-- Load every ready video's `embeddings.json` from B2
+- Select ready candidate videos, optionally narrowed by `video_id`, date range,
+  and event name
+- Load `embeddings.json` from B2 only for candidate videos
 - If `person_id` is set, restrict candidate scenes to that face cluster's appearances
-- If `created_at_from` / `created_at_to` is set, restrict candidates to videos
-  created in that inclusive date range
+- If `created_at_from` / `created_at_to` is set, compare those inclusive,
+  timezone-aware instants against each video's `created_at`
 - If `event_name` is set, restrict candidates to videos whose ingested title
   contains that event/file name
 - Embed the query, score it against each scene vector with in-process numpy cosine

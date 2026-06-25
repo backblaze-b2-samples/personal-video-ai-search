@@ -18,6 +18,7 @@ import {
   namePerson,
   reindexVideo,
   searchVideos,
+  type SearchOptions,
 } from "@/lib/api-client";
 import type { FileMetadata, Person, Video } from "@personal-video-ai-search/shared";
 
@@ -147,25 +148,8 @@ export function useReindexVideo() {
 
 export function useSearch() {
   return useMutation({
-    mutationFn: (vars: {
-      question: string;
-      videoId?: string | null;
-      personId?: string | null;
-      createdAtFrom?: string | null;
-      createdAtTo?: string | null;
-      eventName?: string | null;
-      topK?: number;
-      synthesize?: boolean;
-    }) =>
-      searchVideos(vars.question, {
-        videoId: vars.videoId ?? null,
-        personId: vars.personId ?? null,
-        createdAtFrom: vars.createdAtFrom ?? null,
-        createdAtTo: vars.createdAtTo ?? null,
-        eventName: vars.eventName ?? null,
-        topK: vars.topK,
-        synthesize: vars.synthesize,
-      }),
+    mutationFn: (vars: SearchOptions & { question: string }) =>
+      searchVideos(vars.question, vars),
   });
 }
 

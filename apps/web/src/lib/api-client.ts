@@ -162,11 +162,23 @@ export async function reindexVideo(videoId: string) {
 export interface SearchOptions {
   videoId?: string | null;
   personId?: string | null;
+  // YYYY-MM-DD values from local calendar-day controls. The API receives
+  // timezone-aware instants generated from the user's selected days.
   createdAtFrom?: string | null;
   createdAtTo?: string | null;
   eventName?: string | null;
   topK?: number;
   synthesize?: boolean;
+}
+
+function localDayInstant(dateValue: string | null | undefined, endOfDay = false) {
+  if (!dateValue) return null;
+  const [year, month, day] = dateValue.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  const local = endOfDay
+    ? new Date(year, month - 1, day, 23, 59, 59, 999)
+    : new Date(year, month - 1, day, 0, 0, 0, 0);
+  return local.toISOString();
 }
 
 export async function searchVideos(question: string, opts: SearchOptions = {}) {
@@ -177,8 +189,8 @@ export async function searchVideos(question: string, opts: SearchOptions = {}) {
       question,
       video_id: opts.videoId ?? null,
       person_id: opts.personId ?? null,
-      created_at_from: opts.createdAtFrom || null,
-      created_at_to: opts.createdAtTo || null,
+      created_at_from: localDayInstant(opts.createdAtFrom),
+      created_at_to: localDayInstant(opts.createdAtTo, true),
       event_name: opts.eventName?.trim() || null,
       top_k: opts.topK ?? 8,
       synthesize: opts.synthesize ?? false,

@@ -2,7 +2,8 @@
 # Issue 1: Search Date And Event Filters
 
 ## Goal
-Add inclusive `created_at` date range filters and an event-name filter to Search.
+Add inclusive, timezone-aware `created_at` range filters and an event-name
+filter to Search.
 
 ## Plan
 1. Extend `SearchRequest` with optional date range and event-name fields.

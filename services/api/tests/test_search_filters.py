@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -46,9 +46,19 @@ def _index(video_id: str, scene_id: str) -> dict:
 def search_fixture(monkeypatch):
     videos = [
         _video(
+            "too-early",
+            "Early Birthday Setup",
+            datetime(2026, 2, 14, 4, 59, tzinfo=UTC),
+        ),
+        _video(
             "birthday",
             "Birthday Party",
             datetime(2026, 2, 14, 15, 30, tzinfo=UTC),
+        ),
+        _video(
+            "late-birthday",
+            "Late Birthday Party",
+            datetime(2026, 2, 15, 1, 30, tzinfo=UTC),
         ),
         _video(
             "vacation",
@@ -57,7 +67,11 @@ def search_fixture(monkeypatch):
         ),
     ]
     indexes = {
+        video_store.embeddings_key("too-early"): _index("too-early", "s0000"),
         video_store.embeddings_key("birthday"): _index("birthday", "s0001"),
+        video_store.embeddings_key("late-birthday"): _index(
+            "late-birthday", "s0003"
+        ),
         video_store.embeddings_key("vacation"): _index("vacation", "s0002"),
     }
 
@@ -73,12 +87,12 @@ def test_search_filters_by_created_at_range(search_fixture):
     resp = search_svc.search(
         SearchRequest(
             question="pool",
-            created_at_from=date(2026, 2, 14),
-            created_at_to=date(2026, 2, 14),
+            created_at_from=datetime(2026, 2, 14, 5, 0, tzinfo=UTC),
+            created_at_to=datetime(2026, 2, 15, 4, 59, 59, 999000, tzinfo=UTC),
         )
     )
 
-    assert [clip.video_id for clip in resp.clips] == ["birthday"]
+    assert [clip.video_id for clip in resp.clips] == ["birthday", "late-birthday"]
 
 
 def test_search_filters_by_event_name(search_fixture):
@@ -93,6 +107,28 @@ def test_search_rejects_reversed_created_at_range():
     with pytest.raises(ValidationError):
         SearchRequest(
             question="pool",
-            created_at_from=date(2026, 3, 1),
-            created_at_to=date(2026, 2, 1),
+            created_at_from=datetime(2026, 3, 1, tzinfo=UTC),
+            created_at_to=datetime(2026, 2, 1, tzinfo=UTC),
         )
+
+
+def test_search_rejects_timezone_naive_created_at_filter():
+    with pytest.raises(ValidationError):
+        SearchRequest(
+            question="pool",
+            created_at_from=datetime(2026, 2, 14),
+        )
+
+
+def test_search_rejects_oversized_event_name():
+    with pytest.raises(ValidationError):
+        SearchRequest(question="pool", event_name="x" * 129)
+
+
+async def test_search_api_rejects_oversized_event_name(client):
+    resp = await client.post(
+        "/search",
+        json={"question": "pool", "event_name": "x" * 129},
+    )
+
+    assert resp.status_code == 422
