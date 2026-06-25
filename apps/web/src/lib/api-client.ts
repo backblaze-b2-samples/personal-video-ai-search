@@ -178,7 +178,8 @@ function localDayInstant(dateValue: string | null | undefined, endOfDay = false)
   const local = endOfDay
     ? new Date(year, month - 1, day, 23, 59, 59, 999)
     : new Date(year, month - 1, day, 0, 0, 0, 0);
-  return local.toISOString();
+  const instant = local.toISOString();
+  return endOfDay ? instant.replace(/\.999Z$/, ".999999Z") : instant;
 }
 
 export async function searchVideos(question: string, opts: SearchOptions = {}) {

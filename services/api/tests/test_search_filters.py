@@ -96,7 +96,7 @@ def test_search_filters_by_created_at_range(search_fixture):
         SearchRequest(
             question="pool",
             created_at_from=datetime(2026, 2, 14, 5, 0, tzinfo=UTC),
-            created_at_to=datetime(2026, 2, 15, 4, 59, 59, 999000, tzinfo=UTC),
+            created_at_to=datetime(2026, 2, 15, 4, 59, 59, 999999, tzinfo=UTC),
         )
     )
 
@@ -105,6 +105,18 @@ def test_search_filters_by_created_at_range(search_fixture):
         "late-birthday",
         "final-ms-birthday",
     ]
+
+
+def test_search_preserves_microsecond_upper_bound(search_fixture):
+    resp = search_svc.search(
+        SearchRequest(
+            question="pool",
+            created_at_from=datetime(2026, 2, 14, 5, 0, tzinfo=UTC),
+            created_at_to=datetime(2026, 2, 15, 4, 59, 59, 999998, tzinfo=UTC),
+        )
+    )
+
+    assert [clip.video_id for clip in resp.clips] == ["birthday", "late-birthday"]
 
 
 def test_search_filters_by_event_name(search_fixture):
