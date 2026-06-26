@@ -44,6 +44,8 @@ def _matches_video_filters(
         return False
     if created_at_to and created_at > created_at_to:
         return False
+    # B2 is the sole datastore, so event_name intentionally matches video.title
+    # instead of a separate event metadata field.
     return not event_name or event_name in video.title.casefold()
 
 
