@@ -107,6 +107,7 @@ export default function SearchPage() {
                   id="created-at-from"
                   type="date"
                   value={createdAtFrom}
+                  max={createdAtTo || undefined}
                   onChange={(e) =>
                     setCreatedAtFrom(e.target.value as LocalDateString | "")
                   }
@@ -121,6 +122,7 @@ export default function SearchPage() {
                   id="created-at-to"
                   type="date"
                   value={createdAtTo}
+                  min={createdAtFrom || undefined}
                   onChange={(e) =>
                     setCreatedAtTo(e.target.value as LocalDateString | "")
                   }
