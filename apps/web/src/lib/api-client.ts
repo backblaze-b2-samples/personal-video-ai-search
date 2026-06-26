@@ -12,6 +12,8 @@ import type {
 } from "@personal-video-ai-search/shared";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export const SEARCH_FILTERS_ENABLED =
+  process.env.NEXT_PUBLIC_SEARCH_FILTERS_ENABLED === "true";
 
 interface HealthResponse {
   status: string;
@@ -226,27 +228,44 @@ function localDayInstant(
 }
 
 export async function searchVideos(question: string, opts: SearchOptions = {}) {
-  const createdAtFrom = localDayInstant(opts.createdAtFrom, "createdAtFrom");
-  const createdAtTo = localDayInstant(opts.createdAtTo, "createdAtTo", true);
   const eventName = opts.eventName?.trim() || null;
+  const hasRequestedFilters = Boolean(
+    opts.createdAtFrom || opts.createdAtTo || eventName,
+  );
+
+  if (hasRequestedFilters && !SEARCH_FILTERS_ENABLED) {
+    throw new ApiError("Search filters are disabled in this deployment", 409);
+  }
+
+  const createdAtFrom = SEARCH_FILTERS_ENABLED
+    ? localDayInstant(opts.createdAtFrom, "createdAtFrom")
+    : null;
+  const createdAtTo = SEARCH_FILTERS_ENABLED
+    ? localDayInstant(opts.createdAtTo, "createdAtTo", true)
+    : null;
 
   if (createdAtFrom || createdAtTo || eventName) {
     await ensureSearchFiltersSupported();
   }
 
+  const body: Record<string, unknown> = {
+    question,
+    video_id: opts.videoId ?? null,
+    person_id: opts.personId ?? null,
+    top_k: opts.topK ?? 8,
+    synthesize: opts.synthesize ?? false,
+  };
+
+  if (SEARCH_FILTERS_ENABLED) {
+    body.created_at_from = createdAtFrom;
+    body.created_at_to = createdAtTo;
+    body.event_name = eventName;
+  }
+
   return apiFetch<SearchResponse>("/search", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      question,
-      video_id: opts.videoId ?? null,
-      person_id: opts.personId ?? null,
-      created_at_from: createdAtFrom,
-      created_at_to: createdAtTo,
-      event_name: eventName,
-      top_k: opts.topK ?? 8,
-      synthesize: opts.synthesize ?? false,
-    }),
+    body: JSON.stringify(body),
   });
 }
 

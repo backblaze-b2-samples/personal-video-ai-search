@@ -28,7 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ClipCard } from "@/components/search/clip-card";
 import { usePeople, useSearch } from "@/lib/queries";
-import type { LocalDateString } from "@/lib/api-client";
+import { SEARCH_FILTERS_ENABLED, type LocalDateString } from "@/lib/api-client";
 import type { Clip } from "@personal-video-ai-search/shared";
 
 const ANY_PERSON = "__any__";
@@ -52,9 +52,13 @@ export default function SearchPage() {
       question: q,
       synthesize,
       personId: personId === ANY_PERSON ? null : personId,
-      createdAtFrom: createdAtFrom || null,
-      createdAtTo: createdAtTo || null,
-      eventName: eventName.trim() || null,
+      ...(SEARCH_FILTERS_ENABLED
+        ? {
+            createdAtFrom: createdAtFrom || null,
+            createdAtTo: createdAtTo || null,
+            eventName: eventName.trim() || null,
+          }
+        : {}),
     });
   };
 
@@ -84,51 +88,55 @@ export default function SearchPage() {
           />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="event-name" className="text-muted-foreground">
-                  <Tags className="h-3.5 w-3.5" />
-                  Event
-                </Label>
-                <Input
-                  id="event-name"
-                  value={eventName}
-                  onChange={(e) => setEventName(e.target.value)}
-                  maxLength={EVENT_NAME_MAX_LENGTH}
-                  placeholder="Birthday"
-                  className="h-8 w-40"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="created-at-from" className="text-muted-foreground">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  From
-                </Label>
-                <Input
-                  id="created-at-from"
-                  type="date"
-                  value={createdAtFrom}
-                  max={createdAtTo || undefined}
-                  onChange={(e) =>
-                    setCreatedAtFrom(e.target.value as LocalDateString | "")
-                  }
-                  className="h-8 w-36"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="created-at-to" className="text-muted-foreground">
-                  To
-                </Label>
-                <Input
-                  id="created-at-to"
-                  type="date"
-                  value={createdAtTo}
-                  min={createdAtFrom || undefined}
-                  onChange={(e) =>
-                    setCreatedAtTo(e.target.value as LocalDateString | "")
-                  }
-                  className="h-8 w-36"
-                />
-              </div>
+              {SEARCH_FILTERS_ENABLED && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="event-name" className="text-muted-foreground">
+                      <Tags className="h-3.5 w-3.5" />
+                      Event
+                    </Label>
+                    <Input
+                      id="event-name"
+                      value={eventName}
+                      onChange={(e) => setEventName(e.target.value)}
+                      maxLength={EVENT_NAME_MAX_LENGTH}
+                      placeholder="Birthday"
+                      className="h-8 w-40"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="created-at-from" className="text-muted-foreground">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      From
+                    </Label>
+                    <Input
+                      id="created-at-from"
+                      type="date"
+                      value={createdAtFrom}
+                      max={createdAtTo || undefined}
+                      onChange={(e) =>
+                        setCreatedAtFrom(e.target.value as LocalDateString | "")
+                      }
+                      className="h-8 w-36"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="created-at-to" className="text-muted-foreground">
+                      To
+                    </Label>
+                    <Input
+                      id="created-at-to"
+                      type="date"
+                      value={createdAtTo}
+                      min={createdAtFrom || undefined}
+                      onChange={(e) =>
+                        setCreatedAtTo(e.target.value as LocalDateString | "")
+                      }
+                      className="h-8 w-36"
+                    />
+                  </div>
+                </>
+              )}
               {namedPeople.length > 0 && (
                 <div className="flex items-center gap-2">
                   <Label className="text-muted-foreground">Person</Label>

@@ -70,6 +70,7 @@ def search(req: SearchRequest) -> SearchResponse:
         target_ids = (
             [req.video_id]
             if video
+            and video.status == VideoStatus.ready
             and _matches_video_filters(
                 video, created_at_from, created_at_to, event_name
             )

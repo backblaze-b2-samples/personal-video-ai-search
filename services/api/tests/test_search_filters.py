@@ -10,11 +10,16 @@ from app.service import videos as videos_svc
 from app.types import SearchRequest, Video, VideoStatus
 
 
-def _video(video_id: str, title: str, created_at: datetime) -> Video:
+def _video(
+    video_id: str,
+    title: str,
+    created_at: datetime,
+    status: VideoStatus = VideoStatus.ready,
+) -> Video:
     return Video(
         video_id=video_id,
         title=title,
-        status=VideoStatus.ready,
+        status=status,
         source_key=f"videos/{video_id}/source.mp4",
         size_bytes=1,
         size_human="1 B",
@@ -127,6 +132,46 @@ def test_search_filters_by_event_name(search_fixture):
     )
 
     assert [clip.video_id for clip in resp.clips] == ["vacation"]
+
+
+def test_scoped_search_requires_ready_video(monkeypatch):
+    video = _video(
+        "uploading",
+        "Birthday Upload",
+        datetime(2026, 2, 14, 15, 30, tzinfo=UTC),
+        status=VideoStatus.uploading,
+    )
+    indexes = {video_store.embeddings_key("uploading"): _index("uploading", "s0001")}
+    loaded_keys: list[str] = []
+    presigned_keys: list[str] = []
+
+    def get_json(key: str) -> dict | None:
+        loaded_keys.append(key)
+        return indexes.get(key)
+
+    def presigned_get(key: str) -> str:
+        presigned_keys.append(key)
+        return f"https://b2/{key}"
+
+    monkeypatch.setattr(embeddings, "is_configured", lambda: True)
+    monkeypatch.setattr(embeddings, "embed_query", lambda question: [1.0, 0.0])
+    monkeypatch.setattr(videos_svc, "list_videos", lambda: [video])
+    monkeypatch.setattr(video_store, "get_json", get_json)
+    monkeypatch.setattr(video_store, "presigned_get", presigned_get)
+    monkeypatch.setattr(people_svc, "names_for_video_scenes", lambda video_id: {})
+
+    resp = search_svc.search(
+        SearchRequest(
+            question="pool",
+            video_id="uploading",
+            created_at_from=datetime(2026, 2, 14, tzinfo=UTC),
+            event_name="birthday",
+        )
+    )
+
+    assert resp.clips == []
+    assert loaded_keys == []
+    assert presigned_keys == []
 
 
 def test_search_rejects_reversed_created_at_range():

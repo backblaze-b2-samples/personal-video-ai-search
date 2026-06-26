@@ -55,8 +55,13 @@ Reliability expectations and practices for this project.
 - Railway health checks on `/health`
 - Zero-downtime deploys via rolling updates
 - Environment-specific configuration via env vars (no config files in prod)
-- Search-filter UI rollout is backend-first: deploy and drain old API instances
-  until `/health` reports `features.search_filters: true` everywhere, then
-  enable the frontend that sends `created_at_*` and `event_name`. The frontend
-  checks this flag before sending filtered search requests, and the backend
-  rejects unknown `SearchRequest` fields.
+- Search-filter UI rollout is backend-first and gated by
+  `NEXT_PUBLIC_SEARCH_FILTERS_ENABLED`, which defaults to `false`. Deploy the
+  backend first, drain old API instances until `/health` reports
+  `features.search_filters: true` everywhere, then rebuild/redeploy the frontend
+  with the flag set to `true`. Until then, the frontend hides the controls and
+  omits `created_at_*` / `event_name` request fields. The runtime health check is
+  only a defense-in-depth guard; the deploy-time flag is what prevents filtered
+  requests from reaching old API instances during a rolling deploy.
+- The backend rejects unknown `SearchRequest` fields so new clients fail closed
+  instead of silently dropping filters.
