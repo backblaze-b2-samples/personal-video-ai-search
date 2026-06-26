@@ -1,4 +1,4 @@
-<!-- last_verified: 2026-06-09 -->
+<!-- last_verified: 2026-06-25 -->
 # Feature: Cross-archive Search
 
 ## Purpose
@@ -20,7 +20,18 @@ The B2 **repeated small-read path**.
 - Search service: `services/api/app/service/search.py`
 
 ## Inputs
-- `SearchRequest`: question, optional video_id, optional person_id, top_k, synthesize
+- `SearchRequest`: question, optional video_id, optional person_id, optional
+  timezone-aware `created_at_from` / `created_at_to` instant range, optional
+  event_name, top_k, synthesize
+- `question` is required and limited to 4096 characters; `top_k` is bounded to
+  1-50 clips to avoid request amplification and oversized responses
+- `SearchRequest` is a closed schema: unknown request properties are rejected
+  instead of ignored so clients cannot silently drop unsupported filters
+- Frontend `SearchOptions` accepts only local `YYYY-MM-DD` date strings and
+  converts them to timezone-aware start/end instants before calling the API
+- Frontend date/event filter controls and request fields are available only when
+  `NEXT_PUBLIC_SEARCH_FILTERS_ENABLED=true`; the flag defaults off for
+  backend-first rolling deploys
 
 ## Outputs
 - `SearchResponse`: clips (video, scene, timestamp, caption, tags, score,
@@ -28,8 +39,16 @@ The B2 **repeated small-read path**.
 
 ## Flow
 - If no embedding provider → return `provider_configured: false` (clear UI state, not a 500)
-- Load every ready video's `embeddings.json` from B2
+- Select ready candidate videos, optionally narrowed by `video_id`, date range,
+  and event name
+- Scoped `video_id` searches still require the video to be `ready` before any
+  B2 index artifacts or presigned URLs are loaded
+- Load `embeddings.json` from B2 only for candidate videos
 - If `person_id` is set, restrict candidate scenes to that face cluster's appearances
+- If `created_at_from` / `created_at_to` is set, compare those inclusive,
+  timezone-aware instants against each video's `created_at`
+- If `event_name` is set, restrict candidates to videos whose ingested title
+  contains that event/file name
 - Embed the query, score it against each scene vector with in-process numpy cosine
 - Return the top-k clips, each with a presigned thumbnail and a presigned,
   Range-capable playback URL — the browser seeks the original with a `#t=` media
@@ -39,7 +58,8 @@ The B2 **repeated small-read path**.
 
 ## Edge Cases
 - No videos ready / no index → empty result with `provider_configured: true`
-- Empty question → 400
+- Empty or overlong question → 422 at the API boundary; whitespace-only
+  question → 400 in the service
 - Synthesis failure → logged, returns clips with `answer: null`
 
 ## UX States
@@ -49,7 +69,8 @@ The B2 **repeated small-read path**.
 - Loaded: optional answer card + clip grid (thumbnail → click to play)
 
 ## Verification
-- Test files: `services/api/tests/test_pipeline_degradation.py`
+- Test files: `services/api/tests/test_pipeline_degradation.py`,
+  `services/api/tests/test_search_filters.py`
 - Quick verify command: `pnpm test:api`
 - Full verify command: `pnpm lint && pnpm lint:api && pnpm test:api && pnpm check:structure`
 - Pass criteria: degradation tests green; manual: query a "Ready" video, clips play at the right moment

@@ -18,7 +18,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm dev",
+    command: "NEXT_PUBLIC_SEARCH_FILTERS_ENABLED=true pnpm dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     cwd: "../../",

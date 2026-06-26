@@ -142,6 +142,9 @@ Head to the [Backblaze B2 dashboard](https://secure.backblaze.com/b2_buckets.htm
    - **applicationKey** → `B2_APPLICATION_KEY` *(only shown once)*
 3. *(Optional)* add `OPENAI_API_KEY` to enable transcription + scene tagging +
    search, and `ANTHROPIC_API_KEY` for synthesized answers.
+4. *(Optional)* set `NEXT_PUBLIC_SEARCH_FILTERS_ENABLED=true` to show
+   date/event Search filters. Leave it `false` during rolling deploys until the
+   backend fleet is upgraded and drained.
 
 You must also add a **CORS policy** to the bucket so the browser can PUT
 multipart parts directly and read the ETag header — see

@@ -1,17 +1,53 @@
-from pydantic import BaseModel
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+QUESTION_MAX_LENGTH = 4096
+TOP_K_MAX = 50
 
 
 class SearchRequest(BaseModel):
-    question: str
+    model_config = ConfigDict(extra="forbid")
+
+    question: str = Field(min_length=1, max_length=QUESTION_MAX_LENGTH)
     # None = search across every ready video; otherwise scope to one.
     video_id: str | None = None
     # Optional structured filter: only return clips where this person (face
     # cluster) appears.
     person_id: str | None = None
-    top_k: int = 8
+    # Inclusive timezone-aware instants over the video's created_at timestamp.
+    created_at_from: datetime | None = None
+    created_at_to: datetime | None = None
+    # Optional event/file-name filter. Event names are matched against the
+    # ingested video title because B2 remains the sole datastore.
+    event_name: str | None = Field(default=None, max_length=128)
+    top_k: int = Field(default=8, ge=1, le=TOP_K_MAX)
     # When true and an answer model is configured, synthesize a short answer
     # over the retrieved clips with Claude.
     synthesize: bool = False
+
+    @field_validator("event_name", mode="before")
+    @classmethod
+    def normalize_event_name(cls, value: object) -> object:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            return value
+        stripped = value.strip()
+        return stripped or None
+
+    @model_validator(mode="after")
+    def validate_created_at_range(self) -> "SearchRequest":
+        for value in (self.created_at_from, self.created_at_to):
+            if value and (value.tzinfo is None or value.utcoffset() is None):
+                raise ValueError("created_at filters must include a timezone")
+        if (
+            self.created_at_from
+            and self.created_at_to
+            and self.created_at_from > self.created_at_to
+        ):
+            raise ValueError("created_at_from must be on or before created_at_to")
+        return self
 
 
 class Clip(BaseModel):

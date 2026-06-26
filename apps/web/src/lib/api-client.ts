@@ -6,12 +6,19 @@ import type {
   FileUploadResponse,
   MultipartUpload,
   Person,
-  SearchResponse,
   UploadStats,
   Video,
 } from "@personal-video-ai-search/shared";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+export interface HealthResponse {
+  status: string;
+  b2_connected: boolean;
+  features?: {
+    search_filters?: boolean;
+  };
+}
 
 /** Typed API error with HTTP status code for caller-side branching. */
 export class ApiError extends Error {
@@ -37,7 +44,7 @@ export class ApiError extends Error {
   }
 }
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${API_BASE}${path}`, init);
@@ -56,7 +63,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function getHealth() {
-  return apiFetch<{ status: string; b2_connected: boolean }>("/health");
+  return apiFetch<HealthResponse>("/health");
 }
 
 export async function getFiles(prefix = "", limit = 100) {
@@ -155,29 +162,6 @@ export async function deleteVideo(videoId: string) {
 
 export async function reindexVideo(videoId: string) {
   return apiFetch<Video>(`/videos/${videoId}/reindex`, { method: "POST" });
-}
-
-// --- Search -----------------------------------------------------------------
-
-export interface SearchOptions {
-  videoId?: string | null;
-  personId?: string | null;
-  topK?: number;
-  synthesize?: boolean;
-}
-
-export async function searchVideos(question: string, opts: SearchOptions = {}) {
-  return apiFetch<SearchResponse>("/search", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      question,
-      video_id: opts.videoId ?? null,
-      person_id: opts.personId ?? null,
-      top_k: opts.topK ?? 8,
-      synthesize: opts.synthesize ?? false,
-    }),
-  });
 }
 
 // --- People (face clusters) -------------------------------------------------

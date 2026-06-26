@@ -7,13 +7,14 @@ The index lives in B2 (embeddings.json per video), so B2 stays the sole data
 store — there is no vector database."""
 
 import logging
+from datetime import UTC, datetime
 
 import numpy as np
 
 from app.repo import embeddings, llm, video_store
 from app.service import people as people_svc
 from app.service import videos as videos_svc
-from app.types import Clip, SceneIndex, SearchRequest, SearchResponse, VideoStatus
+from app.types import Clip, SceneIndex, SearchRequest, SearchResponse, Video, VideoStatus
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,28 @@ def _cosine(query: np.ndarray, vector: list[float]) -> float:
     if denom == 0.0:
         return 0.0
     return float(np.dot(query, vec) / denom)
+
+
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None or value.utcoffset() is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
+def _matches_video_filters(
+    video: Video,
+    created_at_from: datetime | None,
+    created_at_to: datetime | None,
+    event_name: str,
+) -> bool:
+    created_at = _as_utc(video.created_at)
+    if created_at_from and created_at < created_at_from:
+        return False
+    if created_at_to and created_at > created_at_to:
+        return False
+    # Event filters match the ingested video title because B2 remains the sole
+    # datastore and there is no separate event metadata index.
+    return not event_name or event_name in video.title.casefold()
 
 
 def search(req: SearchRequest) -> SearchResponse:
@@ -37,12 +60,28 @@ def search(req: SearchRequest) -> SearchResponse:
             question=question, clips=[], answer=None, provider_configured=False
         )
 
+    created_at_from = _as_utc(req.created_at_from) if req.created_at_from else None
+    created_at_to = _as_utc(req.created_at_to) if req.created_at_to else None
+    event_name = (req.event_name or "").casefold()
+
     videos_by_id = {v.video_id: v for v in videos_svc.list_videos()}
     if req.video_id:
-        target_ids = [req.video_id] if req.video_id in videos_by_id else []
+        video = videos_by_id.get(req.video_id)
+        target_ids = (
+            [req.video_id]
+            if video
+            and video.status == VideoStatus.ready
+            and _matches_video_filters(
+                video, created_at_from, created_at_to, event_name
+            )
+            else []
+        )
     else:
         target_ids = [
-            vid for vid, v in videos_by_id.items() if v.status == VideoStatus.ready
+            vid
+            for vid, v in videos_by_id.items()
+            if v.status == VideoStatus.ready
+            and _matches_video_filters(v, created_at_from, created_at_to, event_name)
         ]
 
     indexes: list[SceneIndex] = []
@@ -71,7 +110,7 @@ def search(req: SearchRequest) -> SearchResponse:
         if allowed is None or (index.video_id, scene.scene_id) in allowed
     ]
     scored.sort(key=lambda t: t[0], reverse=True)
-    top = scored[: max(1, req.top_k)]
+    top = scored[: req.top_k]
 
     playback_cache: dict[str, str | None] = {}
     clips: list[Clip] = []

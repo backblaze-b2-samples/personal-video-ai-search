@@ -11,4 +11,5 @@ async def health():
     return {
         "status": "healthy" if b2_ok else "degraded",
         "b2_connected": b2_ok,
+        "features": {"search_filters": True},
     }

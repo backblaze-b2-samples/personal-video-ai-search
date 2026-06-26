@@ -17,8 +17,8 @@ import {
   ingestVideo,
   namePerson,
   reindexVideo,
-  searchVideos,
 } from "@/lib/api-client";
+import { searchVideos, type SearchOptions } from "@/lib/search-api-client";
 import type { FileMetadata, Person, Video } from "@personal-video-ai-search/shared";
 
 // Single source of truth for query keys. Keep these tightly scoped so that
@@ -147,19 +147,8 @@ export function useReindexVideo() {
 
 export function useSearch() {
   return useMutation({
-    mutationFn: (vars: {
-      question: string;
-      videoId?: string | null;
-      personId?: string | null;
-      topK?: number;
-      synthesize?: boolean;
-    }) =>
-      searchVideos(vars.question, {
-        videoId: vars.videoId ?? null,
-        personId: vars.personId ?? null,
-        topK: vars.topK,
-        synthesize: vars.synthesize,
-      }),
+    mutationFn: ({ question, ...opts }: SearchOptions & { question: string }) =>
+      searchVideos(question, opts),
   });
 }
 

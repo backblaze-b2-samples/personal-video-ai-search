@@ -10,6 +10,7 @@ async def test_health_returns_200(client):
     data = response.json()
     assert "status" in data
     assert "b2_connected" in data
+    assert data["features"]["search_filters"] is True
     assert data["status"] in ("healthy", "degraded")
 
 
