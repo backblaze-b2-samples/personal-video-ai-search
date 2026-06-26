@@ -23,6 +23,8 @@ The B2 **repeated small-read path**.
 - `SearchRequest`: question, optional video_id, optional person_id, optional
   timezone-aware `created_at_from` / `created_at_to` instant range, optional
   event_name, top_k, synthesize
+- `question` is required and limited to 4096 characters; `top_k` is bounded to
+  1-50 clips to avoid request amplification and oversized responses
 - `SearchRequest` is a closed schema: unknown request properties are rejected
   instead of ignored so clients cannot silently drop unsupported filters
 - Frontend `SearchOptions` accepts only local `YYYY-MM-DD` date strings and
@@ -56,7 +58,8 @@ The B2 **repeated small-read path**.
 
 ## Edge Cases
 - No videos ready / no index → empty result with `provider_configured: true`
-- Empty question → 400
+- Empty or overlong question → 422 at the API boundary; whitespace-only
+  question → 400 in the service
 - Synthesis failure → logged, returns clips with `answer: null`
 
 ## UX States

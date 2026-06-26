@@ -43,3 +43,15 @@ Set this on the Web service:
 | Variable | Value |
 |----------|-------|
 | `NEXT_PUBLIC_API_URL` | Your API service URL (e.g., `https://api-production-xxx.up.railway.app`) |
+| `NEXT_PUBLIC_SEARCH_FILTERS_ENABLED` | `false` by default. Set to `true` only after every API instance has the Search filter backend and old instances are drained. |
+
+### Search Filter Rollout
+
+The Search date/event filters are gated from the Web service because old API
+instances silently ignore unknown JSON fields. For rolling deploys:
+
+1. Deploy the API service first.
+2. Wait until old API instances are drained and `/health` reports
+   `features.search_filters: true` everywhere.
+3. Rebuild/redeploy the Web service with
+   `NEXT_PUBLIC_SEARCH_FILTERS_ENABLED=true`.

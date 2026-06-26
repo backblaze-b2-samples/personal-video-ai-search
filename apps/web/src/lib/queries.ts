@@ -17,9 +17,8 @@ import {
   ingestVideo,
   namePerson,
   reindexVideo,
-  searchVideos,
-  type SearchOptions,
 } from "@/lib/api-client";
+import { searchVideos, type SearchOptions } from "@/lib/search-api-client";
 import type { FileMetadata, Person, Video } from "@personal-video-ai-search/shared";
 
 // Single source of truth for query keys. Keep these tightly scoped so that

@@ -6,24 +6,19 @@ import type {
   FileUploadResponse,
   MultipartUpload,
   Person,
-  SearchResponse,
   UploadStats,
   Video,
 } from "@personal-video-ai-search/shared";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-export const SEARCH_FILTERS_ENABLED =
-  process.env.NEXT_PUBLIC_SEARCH_FILTERS_ENABLED === "true";
 
-interface HealthResponse {
+export interface HealthResponse {
   status: string;
   b2_connected: boolean;
   features?: {
     search_filters?: boolean;
   };
 }
-
-let searchFilterSupportCheck: Promise<void> | null = null;
 
 /** Typed API error with HTTP status code for caller-side branching. */
 export class ApiError extends Error {
@@ -49,7 +44,7 @@ export class ApiError extends Error {
   }
 }
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${API_BASE}${path}`, init);
@@ -69,21 +64,6 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export async function getHealth() {
   return apiFetch<HealthResponse>("/health");
-}
-
-async function ensureSearchFiltersSupported() {
-  searchFilterSupportCheck ??= getHealth()
-    .then((health) => {
-      if (health.features?.search_filters !== true) {
-        throw new ApiError("Search filter support is not available on the API", 409);
-      }
-    })
-    .catch((error) => {
-      searchFilterSupportCheck = null;
-      throw error;
-    });
-
-  return searchFilterSupportCheck;
 }
 
 export async function getFiles(prefix = "", limit = 100) {
@@ -182,91 +162,6 @@ export async function deleteVideo(videoId: string) {
 
 export async function reindexVideo(videoId: string) {
   return apiFetch<Video>(`/videos/${videoId}/reindex`, { method: "POST" });
-}
-
-// --- Search -----------------------------------------------------------------
-
-export type LocalDateString = `${number}-${number}-${number}`;
-
-export interface SearchOptions {
-  videoId?: string | null;
-  personId?: string | null;
-  // YYYY-MM-DD values from local calendar-day controls. The API receives
-  // timezone-aware instants generated from the user's selected days.
-  createdAtFrom?: LocalDateString | null;
-  createdAtTo?: LocalDateString | null;
-  eventName?: string | null;
-  topK?: number;
-  synthesize?: boolean;
-}
-
-function localDayInstant(
-  dateValue: LocalDateString | null | undefined,
-  fieldName: string,
-  endOfDay = false,
-) {
-  if (!dateValue) return null;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
-    throw new ApiError(`${fieldName} must use YYYY-MM-DD`, 400);
-  }
-  const [year, month, day] = dateValue.split("-").map(Number);
-  if (!year || !month || !day) {
-    throw new ApiError(`${fieldName} must be a valid calendar date`, 400);
-  }
-  const local = endOfDay
-    ? new Date(year, month - 1, day, 23, 59, 59, 999)
-    : new Date(year, month - 1, day, 0, 0, 0, 0);
-  if (
-    local.getFullYear() !== year ||
-    local.getMonth() !== month - 1 ||
-    local.getDate() !== day
-  ) {
-    throw new ApiError(`${fieldName} must be a valid calendar date`, 400);
-  }
-  const instant = local.toISOString();
-  return endOfDay ? instant.replace(/\.999Z$/, ".999999Z") : instant;
-}
-
-export async function searchVideos(question: string, opts: SearchOptions = {}) {
-  const eventName = opts.eventName?.trim() || null;
-  const hasRequestedFilters = Boolean(
-    opts.createdAtFrom || opts.createdAtTo || eventName,
-  );
-
-  if (hasRequestedFilters && !SEARCH_FILTERS_ENABLED) {
-    throw new ApiError("Search filters are disabled in this deployment", 409);
-  }
-
-  const createdAtFrom = SEARCH_FILTERS_ENABLED
-    ? localDayInstant(opts.createdAtFrom, "createdAtFrom")
-    : null;
-  const createdAtTo = SEARCH_FILTERS_ENABLED
-    ? localDayInstant(opts.createdAtTo, "createdAtTo", true)
-    : null;
-
-  if (createdAtFrom || createdAtTo || eventName) {
-    await ensureSearchFiltersSupported();
-  }
-
-  const body: Record<string, unknown> = {
-    question,
-    video_id: opts.videoId ?? null,
-    person_id: opts.personId ?? null,
-    top_k: opts.topK ?? 8,
-    synthesize: opts.synthesize ?? false,
-  };
-
-  if (SEARCH_FILTERS_ENABLED) {
-    body.created_at_from = createdAtFrom;
-    body.created_at_to = createdAtTo;
-    body.event_name = eventName;
-  }
-
-  return apiFetch<SearchResponse>("/search", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
 }
 
 // --- People (face clusters) -------------------------------------------------

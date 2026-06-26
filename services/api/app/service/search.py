@@ -110,7 +110,7 @@ def search(req: SearchRequest) -> SearchResponse:
         if allowed is None or (index.video_id, scene.scene_id) in allowed
     ]
     scored.sort(key=lambda t: t[0], reverse=True)
-    top = scored[: max(1, req.top_k)]
+    top = scored[: req.top_k]
 
     playback_cache: dict[str, str | None] = {}
     clips: list[Clip] = []

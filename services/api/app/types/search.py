@@ -2,11 +2,14 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+QUESTION_MAX_LENGTH = 4096
+TOP_K_MAX = 50
+
 
 class SearchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    question: str
+    question: str = Field(min_length=1, max_length=QUESTION_MAX_LENGTH)
     # None = search across every ready video; otherwise scope to one.
     video_id: str | None = None
     # Optional structured filter: only return clips where this person (face
@@ -18,7 +21,7 @@ class SearchRequest(BaseModel):
     # Optional event/file-name filter. Event names are matched against the
     # ingested video title because B2 remains the sole datastore.
     event_name: str | None = Field(default=None, max_length=128)
-    top_k: int = 8
+    top_k: int = Field(default=8, ge=1, le=TOP_K_MAX)
     # When true and an answer model is configured, synthesize a short answer
     # over the retrieved clips with Claude.
     synthesize: bool = False

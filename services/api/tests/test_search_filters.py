@@ -220,3 +220,15 @@ async def test_search_api_rejects_unknown_filter_fields(client):
     )
 
     assert resp.status_code == 422
+
+
+async def test_search_api_rejects_overlong_question(client):
+    resp = await client.post("/search", json={"question": "x" * 4097})
+
+    assert resp.status_code == 422
+
+
+async def test_search_api_rejects_excessive_top_k(client):
+    resp = await client.post("/search", json={"question": "pool", "top_k": 51})
+
+    assert resp.status_code == 422

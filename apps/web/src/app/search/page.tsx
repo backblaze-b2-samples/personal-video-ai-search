@@ -28,7 +28,10 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ClipCard } from "@/components/search/clip-card";
 import { usePeople, useSearch } from "@/lib/queries";
-import { SEARCH_FILTERS_ENABLED, type LocalDateString } from "@/lib/api-client";
+import {
+  SEARCH_FILTERS_ENABLED,
+  type LocalDateString,
+} from "@/lib/search-api-client";
 import type { Clip } from "@personal-video-ai-search/shared";
 
 const ANY_PERSON = "__any__";
