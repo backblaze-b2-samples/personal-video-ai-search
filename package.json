@@ -18,8 +18,37 @@
   "devDependencies": {
     "concurrently": "^9.1.0"
   },
+  "pnpm": {
+    "overrides": {
+      "@babel/core": "7.29.6",
+      "@hono/node-server": "1.19.15",
+      "ajv@<7": "6.14.0",
+      "ajv@>=7 <9": "8.18.0",
+      "body-parser": "2.3.0",
+      "brace-expansion@<2": "1.1.18",
+      "brace-expansion@>=2 <3": "2.1.4",
+      "express-rate-limit": "8.3.0",
+      "fast-uri": "3.1.5",
+      "flatted": "3.4.2",
+      "hono": "4.13.2",
+      "ip-address": "10.3.1",
+      "js-yaml": "4.3.1",
+      "lodash": "4.17.21",
+      "minimatch@<4": "3.1.4",
+      "minimatch@>=9 <10": "9.0.9",
+      "minimatch@>=10 <11": "10.2.6",
+      "nanoid@<4": "3.3.18",
+      "path-to-regexp@>=8 <9": "8.4.0",
+      "picomatch@<3": "2.3.2",
+      "picomatch@>=4 <5": "4.0.4",
+      "postcss": "8.5.26",
+      "qs": "6.15.2",
+      "sharp": "0.35.3",
+      "shell-quote": "1.9.0"
+    }
+  },
   "engines": {
-    "node": ">=20",
+    "node": ">=20.9.0",
     "pnpm": ">=9"
   }
 }
